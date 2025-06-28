@@ -134,7 +134,7 @@ OIDC_OP_USER_ENDPOINT = "https://openidconnect.googleapis.com/v1/userinfo"
 OIDC_OP_JWKS_ENDPOINT = "https://www.googleapis.com/oauth2/v3/certs"
 OIDC_RP_SIGN_ALGO = "RS256"
 
-LOGIN_REDIRECT_URL = "/"
+LOGIN_REDIRECT_URL = "/login-redirect/"
 LOGOUT_REDIRECT_URL = "/"
 
 STATIC_URL = 'static/'
