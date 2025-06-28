@@ -17,3 +17,5 @@ db.sqlite3
 Thumbs.db
 
 secrets.txt
+
+htmlcov/
