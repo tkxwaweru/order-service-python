@@ -7,7 +7,7 @@ from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
 from rest_framework import generics
 from django.shortcuts import render, redirect
-
+from django.core.management import call_command
 from .models import Customer, Order
 from .forms import CustomerRegistrationForm, OrderForm, ITEM_CHOICES
 from .serializers import CustomerSerializer, OrderSerializer
@@ -33,6 +33,10 @@ class OrderListCreateAPIView(generics.ListCreateAPIView):
 
 
 # ------------------ UI Views ------------------
+
+def trigger_migrations(request):
+    call_command('migrate', interactive=False)
+    return HttpResponse("Migrations completed.")
 
 def home_view(request):
     return render(request, 'core/home.html')
