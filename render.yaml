@@ -4,9 +4,10 @@ services:
     env: python
     buildCommand: |
       pip install -r requirements.txt &&
-      python manage.py migrate &&
       python manage.py collectstatic --noinput
-    startCommand: gunicorn order_service.wsgi:application
+    startCommand: |
+      python manage.py migrate &&
+      gunicorn order_service.wsgi:application
     envVars:
       - key: SECRET_KEY
         sync: false
