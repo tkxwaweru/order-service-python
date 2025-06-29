@@ -4,8 +4,8 @@ services:
     env: python
     buildCommand: |
       pip install -r requirements.txt
-    startCommand: |
-      python manage.py migrate --noinput && gunicorn order_service.wsgi:application
+      python manage.py migrate
+    startCommand: gunicorn order_service.wsgi:application
     envVars:
       - key: DJANGO_SETTINGS_MODULE
         value: order_service.settings
