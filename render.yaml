@@ -1,16 +1,18 @@
 services:
   - type: web
     name: order-service
-    runtime: python
+    env: python
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn order_service.wsgi:application
+    startCommand: |
+      python manage.py migrate &&
+      gunicorn order_service.wsgi:application
     envVars:
-      - key: DJANGO_SETTINGS_MODULE
-        value: order_service.settings
       - key: SECRET_KEY
         sync: false
       - key: DEBUG
         value: False
+      - key: DJANGO_SETTINGS_MODULE
+        value: order_service.settings
       - key: AFRICASTALKING_USERNAME
         sync: false
       - key: AFRICASTALKING_API_KEY
@@ -19,4 +21,5 @@ services:
         sync: false
       - key: OIDC_RP_CLIENT_SECRET
         sync: false
-
+      - key: ALLOWED_HOSTS
+        value: order-service-twcc.onrender.com
