@@ -4,8 +4,8 @@ services:
     env: python
     buildCommand: |
       pip install -r requirements.txt
-      python manage.py migrate
-    startCommand: gunicorn order_service.wsgi:application
+    startCommand: |
+      python manage.py migrate && gunicorn order_service.wsgi:application
     envVars:
       - key: DJANGO_SETTINGS_MODULE
         value: order_service.settings
@@ -23,3 +23,5 @@ services:
         sync: false
       - key: ALLOWED_HOSTS
         value: order-service-twcc.onrender.com
+      - key: DATABASE_URL
+        sync: false
