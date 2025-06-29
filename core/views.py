@@ -34,10 +34,6 @@ class OrderListCreateAPIView(generics.ListCreateAPIView):
 
 # ------------------ UI Views ------------------
 
-def trigger_migrations(request):
-    call_command('migrate', interactive=False)
-    return HttpResponse("Migrations completed.")
-
 def home_view(request):
     return render(request, 'core/home.html')
 
