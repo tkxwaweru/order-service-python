@@ -1,7 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-echo "Running migrations..."
-python manage.py migrate --noinput
-
+# Entry script for Render deployment
 echo "Starting Gunicorn..."
-exec gunicorn order_service.wsgi:application --bind 0.0.0.0:$PORT
+gunicorn order_service.wsgi:application

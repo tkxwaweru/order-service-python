@@ -2,10 +2,11 @@
 Views for the API methods and user interface
 """
 
-from django.http import HttpResponse
+from django.http import HttpResponseForbidden, HttpResponse
 from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
 from rest_framework import generics
+from django.conf import settings
 from django.shortcuts import render, redirect
 from django.core.management import call_command
 from .models import Customer, Order
@@ -34,9 +35,18 @@ class OrderListCreateAPIView(generics.ListCreateAPIView):
 
 # ------------------ UI Views ------------------
 
+def run_migrations(request):
+    token = request.headers.get("X-Migrate-Token")
+    expected_token = getattr(settings, "MIGRATION_SECRET_TOKEN", None)
+
+    if token != expected_token:
+        return HttpResponseForbidden("Unauthorized")
+
+    call_command("migrate", interactive=False)
+    return HttpResponse("Migrations applied successfully.")
+
 def home_view(request):
     return render(request, 'core/home.html')
-
 
 @login_required
 def login_redirect_view(request):

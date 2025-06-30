@@ -23,3 +23,5 @@ services:
         value: order-service-twcc.onrender.com
       - key: DATABASE_URL
         sync: false
+      - key: MIGRATION_SECRET_TOKEN
+        sync: false 

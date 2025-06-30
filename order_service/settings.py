@@ -27,6 +27,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Secret Key from env
 SECRET_KEY = os.getenv("SECRET_KEY", "fallback-insecure-key")
 
+#Migration secret from env
+MIGRATION_SECRET_TOKEN = os.getenv("MIGRATION_SECRET_TOKEN")
+
 # SECURITY WARNING: don't run with debug turned on in production!
 # DEBUG = os.getenv("DEBUG", "False") == "True"
 DEBUG = True
