@@ -13,6 +13,7 @@ from .models import Customer, Order
 from .forms import CustomerRegistrationForm, OrderForm, ITEM_CHOICES
 from .serializers import CustomerSerializer, OrderSerializer
 from .utils import send_order_sms
+import subprocess
 
 
 # ------------------ API Views ------------------
@@ -27,7 +28,7 @@ class OrderListCreateAPIView(generics.ListCreateAPIView):
 
     def perform_create(self, serializer):
         order = serializer.save()
-        # Use the test number or real customer phone later
+        # Using test number for now: will change to actual customer phone number
         phone_number = "+254712345678"
         message = f"Hi {order.customer.name}, your order for '{order.item}' (Ksh {order.amount}) has been received."
         send_order_sms(phone_number, message)
@@ -35,15 +36,18 @@ class OrderListCreateAPIView(generics.ListCreateAPIView):
 
 # ------------------ UI Views ------------------
 
-def run_migrations(request):
-    token = request.headers.get("X-Migrate-Token")
+def run_migrations_view(request):
     expected_token = getattr(settings, "MIGRATION_SECRET_TOKEN", None)
+    received_token = request.headers.get("X-Migrate-Token")
 
-    if token != expected_token:
-        return HttpResponseForbidden("Unauthorized")
-
-    call_command("migrate", interactive=False)
-    return HttpResponse("Migrations applied successfully.")
+    if expected_token and received_token == expected_token:
+        try:
+            subprocess.run(["python", "manage.py", "migrate"], check=True)
+            return HttpResponse("Migrations applied successfully.")
+        except subprocess.CalledProcessError:
+            return HttpResponse("Migration failed.", status=500)
+    else:
+        return HttpResponseForbidden("Invalid or missing migration token.")
 
 def home_view(request):
     return render(request, 'core/home.html')
