@@ -46,7 +46,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',     
-    'core', 
+    'apps.core', 
+    'apps.inventory', 
     'mozilla_django_oidc'              
 ]
 
@@ -60,7 +61,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'order_service.urls'
+ROOT_URLCONF = 'config.urls'
 
 TEMPLATES = [
     {
@@ -77,21 +78,23 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'order_service.wsgi.application'
+WSGI_APPLICATION = 'config.wsgi.application'
 
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-"""
+# Local testing
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     }
 }
-"""
 
+
+# For online postgres
+"""
 DATABASES = {
     'default': dj_database_url.config(
         default=os.getenv("DATABASE_URL"),
@@ -99,6 +102,7 @@ DATABASES = {
         conn_health_checks=True,
     )
 }
+"""
 
 
 # Password validation
@@ -160,5 +164,11 @@ STATIC_URL = '/static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+TEST_RUNNER = 'django.test.runner.DiscoverRunner'
+
+# When only using tests/ directory
+TEST_DISCOVERY_ROOT = BASE_DIR / "tests"
+
 
 

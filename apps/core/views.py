@@ -3,7 +3,8 @@ Views for the API methods and user interface
 """
 
 from django.http import HttpResponseForbidden, HttpResponse
-from django.contrib.auth import logout
+from django.contrib.auth import logout, authenticate, login
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from rest_framework import generics
 from django.conf import settings
@@ -12,7 +13,7 @@ from django.core.management import call_command
 from .models import Customer, Order
 from .forms import CustomerRegistrationForm, OrderForm, ITEM_CHOICES
 from .serializers import CustomerSerializer, OrderSerializer
-from .utils import send_order_sms
+from common.utils import send_order_confirmation_sms
 import subprocess
 
 
@@ -28,10 +29,7 @@ class OrderListCreateAPIView(generics.ListCreateAPIView):
 
     def perform_create(self, serializer):
         order = serializer.save()
-        # Using test number for now: will change to actual customer phone number
-        phone_number = "+254712345678"
-        message = f"Hi {order.customer.name}, your order for '{order.item}' (Ksh {order.amount}) has been received."
-        send_order_sms(phone_number, message)
+        send_order_confirmation_sms(order)
 
 
 # ------------------ UI Views ------------------
@@ -84,6 +82,9 @@ def register_customer_view(request):
 
 @login_required
 def order_form_view(request):
+    if request.user.is_staff:
+        return HttpResponseForbidden("Admins are not allowed to place orders.")
+
     try:
         customer = request.user.customer
     except Customer.DoesNotExist:
@@ -103,8 +104,7 @@ def order_form_view(request):
             )
 
             # Send SMS
-            message = f"Hi {customer.name}, your order for '{selected_item}' (Ksh {amount}) has been received."
-            send_order_sms(customer.phone_number, message)
+            send_order_confirmation_sms(order)
 
             return render(request, 'core/order_success.html', {'order': order})
     else:
@@ -113,6 +113,29 @@ def order_form_view(request):
     return render(request, 'core/order_form.html', {'form': form, 'customer': customer})
 
 
+
 def logout_view(request):
     logout(request)
     return redirect('home')
+
+@login_required
+def admin_dashboard_view(request):
+    # You can render a simple template that shows stock/orders, etc.
+    return render(request, 'core/admin_dashboard.html')
+
+def manual_login_view(request):
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        user = authenticate(request, username=username, password=password)
+
+        if user is not None:
+            login(request, user)
+            if user.is_staff:
+                return redirect('admin_dashboard')  # Replace with actual admin interface
+            else:
+                return redirect('order_form')
+        else:
+            messages.error(request, "Invalid credentials. Please try again.")
+
+    return redirect('home')  # fallback
