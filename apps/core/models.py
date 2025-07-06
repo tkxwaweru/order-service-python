@@ -35,3 +35,7 @@ class Order(models.Model):
 
     def __str__(self):
         return f"{self.item} - {self.amount} for {self.customer.name}"
+
+"""
+
+"""
