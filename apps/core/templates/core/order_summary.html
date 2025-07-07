@@ -1,0 +1,33 @@
+{% extends 'admin/base_site.html' %}
+
+{% block content %}
+<h2>Order Summary</h2>
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Order ID</th>
+            <th>Customer</th>
+            <th>Items</th>
+            <th>Total Price (Ksh)</th>
+            <th>Timestamp</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for order in orders %}
+        <tr>
+            <td>{{ order.id }}</td>
+            <td>{{ order.customer.name }}</td>
+            <td>
+                <ul>
+                    {% for item in order.items.all %}
+                        <li>{{ item.inventory_item.name }} x {{ item.quantity }}</li>
+                    {% endfor %}
+                </ul>
+            </td>
+            <td>{{ order.total_price }}</td>
+            <td>{{ order.timestamp }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

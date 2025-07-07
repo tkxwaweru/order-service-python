@@ -9,15 +9,17 @@ from django.contrib.auth.decorators import login_required
 from rest_framework import generics
 from django.conf import settings
 from django.shortcuts import render, redirect
-from django.core.management import call_command
-from .models import Customer, Order
-from .forms import CustomerRegistrationForm, OrderForm, ITEM_CHOICES
+# from django.core.management import call_command
+from .models import Customer, Order, OrderItem
+from .forms import CustomerRegistrationForm # OrderForm, ITEM_CHOICES
 from .serializers import CustomerSerializer, OrderSerializer
 from common.utils import send_order_confirmation_sms
 import subprocess
-
-
-# ------------------ API Views ------------------
+from django.contrib.admin.views.decorators import staff_member_required
+from apps.inventory.models import InventoryItem
+from django.template.loader import render_to_string
+from weasyprint import HTML
+import json
 
 class CustomerListCreateAPIView(generics.ListCreateAPIView):
     queryset = Customer.objects.all()
@@ -30,9 +32,6 @@ class OrderListCreateAPIView(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         order = serializer.save()
         send_order_confirmation_sms(order)
-
-
-# ------------------ UI Views ------------------
 
 def run_migrations_view(request):
     expected_token = getattr(settings, "MIGRATION_SECRET_TOKEN", None)
@@ -82,36 +81,82 @@ def register_customer_view(request):
 
 @login_required
 def order_form_view(request):
-    if request.user.is_staff:
-        return HttpResponseForbidden("Admins are not allowed to place orders.")
-
     try:
         customer = request.user.customer
     except Customer.DoesNotExist:
         return redirect('register_customer')
 
     if request.method == 'POST':
-        form = OrderForm(request.POST)
-        if form.is_valid():
-            selected_item = form.cleaned_data['selected_item']
-            amount = dict(ITEM_CHOICES)[selected_item]
+        cart_data = request.POST.get('cart_data')
+        try:
+            items = json.loads(cart_data)
+        except (json.JSONDecodeError, TypeError):
+            messages.error(request, "Invalid cart data.")
+            return redirect('order_form')
 
-            # Create order
-            order = Order.objects.create(
-                customer=customer,
-                item=selected_item,
-                amount=amount
+        if not items:
+            messages.warning(request, "Please add at least one item to your order.")
+            return redirect('order_form')
+
+        order = Order.objects.create(
+            customer=customer,
+            amount=0  # Temporary value to satisfy the NOT NULL constraint
+        )
+
+        total_price = 0
+        sms_summary = []
+
+        for item in items:
+            try:
+                inventory_item = InventoryItem.objects.get(id=item['id'])
+            except InventoryItem.DoesNotExist:
+                messages.error(request, f"Item ID {item['id']} not found.")
+                continue
+
+            qty = int(item['qty'])
+
+            if inventory_item.on_hand < qty:
+                messages.warning(request, f"Not enough stock for {inventory_item.name}. Available: {inventory_item.on_hand}")
+                continue
+
+            # Update inventory
+            inventory_item.on_hand -= qty
+            inventory_item.save()
+
+            OrderItem.objects.create(
+                order=order,
+                item=inventory_item,
+                quantity=qty,
+                price_at_order=inventory_item.price
             )
 
-            # Send SMS
-            send_order_confirmation_sms(order)
+            total_price += qty * float(inventory_item.price)
+            sms_summary.append(f"{inventory_item.name} x{qty}")
 
-            return render(request, 'core/order_success.html', {'order': order})
-    else:
-        form = OrderForm()
+        if not order.items.exists():
+            order.delete()
+            messages.error(request, "No items could be processed. Order cancelled.")
+            return redirect('order_form')
 
-    return render(request, 'core/order_form.html', {'form': form, 'customer': customer})
+        # Save total to deprecated amount field (for compatibility)
+        order.amount = total_price
+        order.save()
 
+        # Send SMS with item summary
+        send_order_confirmation_sms(order, summary=", ".join(sms_summary))
+
+        return render(request, 'core/order_success.html', {
+            'order': order,
+            'summary': sms_summary,
+            'total_price': total_price
+        })
+
+    # GET request
+    inventory_items = InventoryItem.objects.filter(on_hand__gt=0)
+    return render(request, 'core/order_form.html', {
+        'customer': customer,
+        'inventory_items': inventory_items
+    })
 
 
 def logout_view(request):
@@ -139,3 +184,25 @@ def manual_login_view(request):
             messages.error(request, "Invalid credentials. Please try again.")
 
     return redirect('home')  # fallback
+
+@staff_member_required
+def inventory_summary_view(request):
+    items = InventoryItem.objects.all()
+    return render(request, 'core/inventory_summary.html', {'items': items})
+
+@staff_member_required
+def order_summary_view(request):
+    orders = Order.objects.prefetch_related('items__inventory_item', 'customer')
+    return render(request, 'core/order_summary.html', {'orders': orders})
+
+@login_required
+def order_receipt_pdf(request, order_id):
+    order = Order.objects.get(id=order_id)
+
+    html_string = render_to_string("core/order_receipt.html", {"order": order})
+    html = HTML(string=html_string)
+    pdf = html.write_pdf()
+
+    response = HttpResponse(pdf, content_type="application/pdf")
+    response['Content-Disposition'] = f'filename="order_{order.id}_receipt.pdf"'
+    return response

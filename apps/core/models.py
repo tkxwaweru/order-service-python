@@ -41,8 +41,8 @@ class Order(models.Model):
         CANCELLED = 'CANCELLED', 'Cancelled'
 
     customer = models.ForeignKey('Customer', on_delete=models.CASCADE, related_name='orders')
-    item = models.CharField(max_length=100)  # To be deprecated after adding OrderItem
-    amount = models.DecimalField(max_digits=10, decimal_places=2)  # To be deprecated too
+    item = models.CharField(max_length=100, blank=True, null=True)  # deprecated
+    amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)  # deprecated
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.CREATED)
     timestamp = models.DateTimeField(default=timezone.now)
 
@@ -51,7 +51,7 @@ class Order(models.Model):
 
     @property
     def total_price(self):
-        return sum(item.total_price for item in self.items.all())
+        return sum(item.quantity * item.price_at_order for item in self.items.all())
     
 # Ordered items
 class OrderItem(models.Model):

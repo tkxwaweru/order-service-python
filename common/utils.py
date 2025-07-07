@@ -27,7 +27,7 @@ def send_order_sms(phone_number, message):
         print("SMS failed:", e)
 
 
-def send_order_confirmation_sms(order):
+def send_order_confirmation_sms(order, summary=None):
     """
     High-level order SMS interface.
     """
@@ -35,7 +35,11 @@ def send_order_confirmation_sms(order):
         print("No phone number provided.")
         return
 
-    message = f"Hi {order.customer.name}, your order for '{order.item}' (Ksh {order.amount}) has been received."
+    if summary:
+        message = f"Hi {order.customer.name}, your order has been received: {summary}. Total: Ksh {order.amount}."
+    else:
+        message = f"Hi {order.customer.name}, your order for '{order.item}' (Ksh {order.amount}) has been received."
+
     send_order_sms(order.customer.phone_number, message)
 
 
