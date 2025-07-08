@@ -3,7 +3,7 @@ Views for the API methods and user interface
 """
 
 from django.http import HttpResponseForbidden, HttpResponse
-from django.contrib.auth import logout, authenticate, login
+from django.contrib.auth import logout, authenticate, login, get_backends
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from rest_framework import generics
@@ -20,6 +20,7 @@ from apps.inventory.models import InventoryItem
 from django.template.loader import render_to_string
 from weasyprint import HTML
 import json
+from common.utils import notify_shop_employee_stock_low
 
 class CustomerListCreateAPIView(generics.ListCreateAPIView):
     queryset = Customer.objects.all()
@@ -58,26 +59,37 @@ def login_redirect_view(request):
         return redirect('register_customer')
 
 
-@login_required
+# @login_required
 def register_customer_view(request):
-    try:
-        if request.user.customer:
-            return redirect('order_form')
-    except Customer.DoesNotExist:
-        pass
+    if request.user.is_authenticated:
+        try:
+            if request.user.customer:
+                return redirect('order_form')
+        except Customer.DoesNotExist:
+            pass
 
     if request.method == 'POST':
-        form = CustomerRegistrationForm(request.POST)
+        form = CustomerRegistrationForm(request.POST, initial={"user": request.user})
         if form.is_valid():
-            customer = form.save(commit=False)
-            customer.user = request.user
-            customer.save()
+            # OIDC users: user already exists
+            if request.user and request.user.is_authenticated:
+                customer = form.save(user=request.user)
+            else:
+                customer = form.save()  # manual
+
+            # Ensure backend is set for login
+            backend = get_backends()[0]
+            customer.user.backend = f"{backend.__module__}.{backend.__class__.__name__}"
+            login(request, customer.user)
+
             return redirect('order_form')
+        else:
+            # ✅ Handle invalid form submission
+            return render(request, 'core/register.html', {'form': form})
     else:
         form = CustomerRegistrationForm()
 
     return render(request, 'core/register.html', {'form': form})
-
 
 @login_required
 def order_form_view(request):
@@ -122,6 +134,10 @@ def order_form_view(request):
             # Update inventory
             inventory_item.on_hand -= qty
             inventory_item.save()
+
+            # ✅ NEW: Check warn limit
+            if inventory_item.on_hand <= inventory_item.warn_limit:
+                notify_shop_employee_stock_low(inventory_item.name, inventory_item.on_hand)
 
             OrderItem.objects.create(
                 order=order,
@@ -176,14 +192,13 @@ def manual_login_view(request):
 
         if user is not None:
             login(request, user)
-            if user.is_staff:
-                return redirect('admin_dashboard')  # Replace with actual admin interface
-            else:
-                return redirect('order_form')
+            return redirect('admin_dashboard' if user.is_staff else 'order_form')
         else:
-            messages.error(request, "Invalid credentials. Please try again.")
+            return render(request, 'core/home.html', {
+                'show_login_error': True
+            })
 
-    return redirect('home')  # fallback
+    return render(request, 'core/home.html')  # Normal GET
 
 @staff_member_required
 def inventory_summary_view(request):
@@ -206,3 +221,4 @@ def order_receipt_pdf(request, order_id):
     response = HttpResponse(pdf, content_type="application/pdf")
     response['Content-Disposition'] = f'filename="order_{order.id}_receipt.pdf"'
     return response
+

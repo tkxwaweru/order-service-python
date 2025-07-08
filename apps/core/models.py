@@ -3,33 +3,40 @@ Defining models for the database
 """
 
 from django.db import models
-from django.contrib.auth.models import User
+from common.models import CustomUser
 from django.utils import timezone
 from apps.inventory.models import InventoryItem
 from django.core.exceptions import ValidationError
+from django.conf import settings
 
 # For customers
 class Customer(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True)
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, null=True, blank=True)
     name = models.CharField(max_length=100)
     code = models.CharField(max_length=6, unique=True, blank=True)
     phone_number = models.CharField(max_length=15, unique=True)
 
     def clean(self):
+        if not self.phone_number:
+            raise ValidationError("Phone number is required.")
         if not self.phone_number.startswith('+254'):
             raise ValidationError("Phone number must start with +254.")
 
     def save(self, *args, **kwargs):
-        self.full_clean()  # Calls clean()
-        if not self.code:
-            last_customer = Customer.objects.order_by('-id').first()
-            next_code = str(int(last_customer.code) + 1).zfill(6) if last_customer and last_customer.code.isdigit() else "000001"
-            self.code = next_code
-        super().save(*args, **kwargs)
+        validate = kwargs.pop("validate", True)
+        if validate:
+            self.full_clean()
 
+        if not self.code:
+            last = Customer.objects.order_by("-id").first()
+            last_code = int(last.code or "000000") if last else 0
+            self.code = f"{last_code + 1:06d}"
+
+        super().save(*args, **kwargs)
+        
     def __str__(self):
         return f"{self.name} ({self.code})"
-    
+
 # For orders
 class Order(models.Model):
 
@@ -37,8 +44,8 @@ class Order(models.Model):
         CREATED = 'CREATED', 'Created'
         PENDING = 'PENDING', 'Pending'
         APPROVED = 'APPROVED', 'Approved'
-        REJECTED = 'REJECTED', 'Rejected'
-        CANCELLED = 'CANCELLED', 'Cancelled'
+        DELIVERED = 'DELIVERED', 'Delivered'   
+        CANCELLED = 'CANCELLED', 'Cancelled'   
 
     customer = models.ForeignKey('Customer', on_delete=models.CASCADE, related_name='orders')
     item = models.CharField(max_length=100, blank=True, null=True)  # deprecated
@@ -52,7 +59,21 @@ class Order(models.Model):
     @property
     def total_price(self):
         return sum(item.quantity * item.price_at_order for item in self.items.all())
-    
+
+    def save(self, *args, **kwargs):
+        status_changed = False
+
+        if self.pk:
+            previous = Order.objects.filter(pk=self.pk).first()
+            if previous and previous.status != self.status:
+                status_changed = True
+
+        super().save(*args, **kwargs)
+
+        if status_changed:
+            from common.utils import send_order_status_sms  
+            send_order_status_sms(self)
+
 # Ordered items
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items')

@@ -7,6 +7,19 @@
 </head>
 <body class="bg-light p-5">
 <div class="container">
+
+    <!-- ✅ Django Messages Block -->
+    {% if messages %}
+      <div class="mt-3">
+        {% for message in messages %}
+          <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
     <h2 class="mb-4">Place Your Order</h2>
     <p>Welcome, {{ customer.name }}!</p>
     <a href="{% url 'logout' %}" class="btn btn-outline-danger float-end mb-3">Logout</a>
@@ -19,6 +32,7 @@
                     <th>Item</th>
                     <th>Description</th>
                     <th>Available</th>
+                    <th>Status</th>
                     <th>Price (Ksh)</th>
                     <th>Qty</th>
                     <th>Action</th>
@@ -30,6 +44,15 @@
                     <td>{{ item.name }}</td>
                     <td>{{ item.description }}</td>
                     <td>{{ item.on_hand }}</td>
+                    <td>
+                        {% if item.state == "OUT_OF_STOCK" %}
+                            <span class="badge bg-danger">Out of stock</span>
+                        {% elif item.state == "FEW_REMAINING" %}
+                            <span class="badge bg-warning text-dark">Few remaining</span>
+                        {% else %}
+                            <span class="badge bg-success">Available</span>
+                        {% endif %}
+                    </td>
                     <td>{{ item.price }}</td>
                     <td>
                         <input type="number" class="form-control form-control-sm qty-input" min="1" max="{{ item.on_hand }}">

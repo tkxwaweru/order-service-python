@@ -8,7 +8,14 @@
 <body class="bg-light p-5 text-center">
     <div class="container">
         <h1 class="mb-4">Welcome to Order Service</h1>
-        <p class="lead">Sign in to your account to get started:</p>
+
+        {% if show_login_error %}
+            <div class="alert alert-danger">
+                Invalid username or password.
+            </div>
+        {% endif %}
+
+        <p class="lead">Sign in to your account:</p>
 
         <!-- Manual login form -->
         <div class="row justify-content-center">

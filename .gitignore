@@ -1,21 +1,32 @@
-# Byte-compiled / cache files
+# Python bytecode
 __pycache__/
 *.py[cod]
 
-# Django database 
+# Django DB (local use only)
 db.sqlite3
 
-# Environment files 
-.env
+# Coverage reports
+htmlcov/
+.coverage
 
-# VSCode or editor-specific settings 
+# Environment / secrets
+.env
+secrets.txt
+
+# IDE and editor configs
 .vscode/
 *.code-workspace
 
-# System files
+# macOS and Windows system files
 .DS_Store
 Thumbs.db
 
-secrets.txt
+# Pytest cache
+.pytest_cache/
 
-htmlcov/db.sqlite3
+# Migrations pyc
+**/migrations/*.pyc
+**/migrations/__pycache__/
+
+# Local dev logs (optional)
+*.log

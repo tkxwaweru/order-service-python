@@ -48,7 +48,8 @@ INSTALLED_APPS = [
     'rest_framework',     
     'apps.core', 
     'apps.inventory', 
-    'mozilla_django_oidc'              
+    'mozilla_django_oidc',   
+    'common',           
 ]
 
 MIDDLEWARE = [
@@ -103,7 +104,7 @@ DATABASES = {
     )
 }
 """
-
+AUTH_USER_MODEL = 'common.CustomUser'
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
@@ -129,7 +130,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Africa/Nairobi'
 
 USE_I18N = True
 
@@ -169,6 +170,9 @@ TEST_RUNNER = 'django.test.runner.DiscoverRunner'
 
 # When only using tests/ directory
 TEST_DISCOVERY_ROOT = BASE_DIR / "tests"
+
+
+
 
 
 
