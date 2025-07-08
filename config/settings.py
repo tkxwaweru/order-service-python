@@ -86,16 +86,17 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 # Local testing
+"""
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     }
 }
-
+"""
 
 # For online postgres
-"""
+
 DATABASES = {
     'default': dj_database_url.config(
         default=os.getenv("DATABASE_URL"),
@@ -103,7 +104,7 @@ DATABASES = {
         conn_health_checks=True,
     )
 }
-"""
+
 AUTH_USER_MODEL = 'common.CustomUser'
 
 # Password validation
