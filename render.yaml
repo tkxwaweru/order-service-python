@@ -6,7 +6,7 @@ services:
     startCommand: ./entrypoint.sh
     envVars:
       - key: DJANGO_SETTINGS_MODULE
-        value: order_service.settings
+        value: config.settings
       - key: DEBUG
         value: "False"
       - key: SECRET_KEY
