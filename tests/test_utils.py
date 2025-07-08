@@ -44,14 +44,18 @@ def test_send_order_sms_with_missing_credentials(mock_create):
 
 
 @pytest.mark.django_db
-@patch("common.utils.sms.send", side_effect=Exception("API error"))
+@patch("common.utils.sms")
 @patch("common.utils.SentSMS.objects.create")
-def test_send_order_sms_failure(mock_create, mock_send):
+def test_send_order_sms_failure(mock_create, mock_sms):
+    mock_sms.send.side_effect = Exception("API error")
+    from common.utils import send_order_sms
     send_order_sms("+254712345678", "Failing message")
-    mock_send.assert_called_once()
+
+    mock_sms.send.assert_called_once()
     mock_create.assert_called_once()
     args, kwargs = mock_create.call_args
     assert kwargs["status"] == "failed"
+
 
 
 @pytest.mark.django_db
