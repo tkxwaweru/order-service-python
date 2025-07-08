@@ -40,6 +40,10 @@ def run_migrations_view(request):
 
     if expected_token and received_token == expected_token:
         try:
+            # Apply common migration first, faked
+            subprocess.run(["python", "manage.py", "migrate", "common", "0001", "--fake"], check=True)
+
+            # Now apply all others normally
             subprocess.run(["python", "manage.py", "migrate"], check=True)
             return HttpResponse("Migrations applied successfully.")
         except subprocess.CalledProcessError:
