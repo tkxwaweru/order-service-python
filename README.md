@@ -121,7 +121,7 @@ coverage html
 ```
 
 ---
-## Deployment (Render)
+## Production Environment 
 
 ### Environment variables:
 
@@ -155,3 +155,12 @@ python -c "import secrets; print(secrets.token_urlsafe(32))"
 ```
 
 Copy the generated code and place it in your `.env` file and Render environment variables.
+
+### Deployment
+
+The project is configured with GitHub Actions to automatically rebuild and redeploy upon new commits provided they pass the CI test threshold.
+
+## Future Improvements
+1. Implement admin interface for easy data modification
+2. Implement live SMS environment via Africa's Talking
+3. Implement dynamic order state change logic with SMS notifications upon change in order state
