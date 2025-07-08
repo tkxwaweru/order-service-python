@@ -18,6 +18,7 @@ A Django-based backend service for managing customer registrations and orders. T
 - SMS notifications (via Africa's Talking)
 - RESTful API (JSON responses)
 - PostgreSQL database (hosted on Render)
+- Comprehensive test coverage (71 test cases)
 
 ---
 ## Technical Stack
@@ -104,6 +105,8 @@ MIGRATION_SECRET_TOKEN=your_token
 
 4. Apply migrations
 ```{code}
+python manage.py makemigrations
+
 python manage.py migrate
 ```
 5. Run server
@@ -112,8 +115,9 @@ python manage.py runserver
 ```
 6. Running tests
 ```{code}
-coverage run manage.py test
-coverage report -m
+coverage run -m pytest tests/
+
+coverage html
 ```
 
 ---
