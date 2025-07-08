@@ -44,7 +44,8 @@ def run_migrations_view(request):
             subprocess.run(["python", "manage.py", "migrate", "common", "0001", "--fake"], check=True)
 
             # Now apply all others normally
-            subprocess.run(["python", "manage.py", "migrate"], check=True)
+            subprocess.run(["python", "manage.py", "migrate", "--fake-initial"], check=True)
+            
             return HttpResponse("Migrations applied successfully.")
         except subprocess.CalledProcessError:
             return HttpResponse("Migration failed.", status=500)
