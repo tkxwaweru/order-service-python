@@ -1,0 +1,5 @@
+"id","phone_number","message","sent_at","status"
+"1","+254702688832","Hi Trevor Waweru, your order has been received: Smartphone x1, Laptop x1, Desk Chair x1. Total: Ksh 140000.0.","2025-07-08 21:02:22.770439+00","Success"
+"2","+254702688831","Stock alert: Laptop is low. Only 2 left!","2025-07-08 21:04:53.071722+00","Success"
+"3","+254702688831","Stock alert: Laptop is low. Only 2 left!","2025-07-08 21:04:53.368111+00","Success"
+"4","+254702688832","Hi Trevor Waweru, your order has been received: Laptop x7. Total: Ksh 560000.0.","2025-07-08 21:04:53.521483+00","Success"
